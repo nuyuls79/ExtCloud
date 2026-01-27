@@ -1,7 +1,7 @@
 {
     "name": "ExtCloudAdd",
     "description": "Cloudstream extensions collection",
-    "iconUrl": "https://avatars.githubusercontent.com/u/114850487?v=4",
+    "iconUrl": "https://img.freepik.com/vektor-premium/anak-laki-laki-gamer-lucu-bermain-video-game_657438-11309.jpg",
     "manifestVersion": 1,
     "pluginLists": [
       "https://raw.githubusercontent.com/duro92/ExtCloud/builds/plugins.json"
