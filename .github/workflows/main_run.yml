@@ -12,7 +12,7 @@ on:
       - "*.md"
   workflow_dispatch:
 
-# Memberikan izin kepada GitHub Actions untuk menulis/push ke repositori
+# PENTING: Memberikan izin tulis agar GitHub Actions bisa upload hasil build
 permissions:
   contents: write
 
@@ -28,12 +28,9 @@ jobs:
       - name: Checkout builds
         run: |
           REPO="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          # Mengecek apakah branch 'builds' sudah ada, jika tidak maka akan dibuat secara otomatis
           if git ls-remote --exit-code --heads $REPO builds; then
-            echo "Branch builds ditemukan, cloning..."
             git clone --branch builds $REPO builds
           else
-            echo "Branch builds tidak ada, membuat baru..."
             mkdir builds
             cd builds
             git init
@@ -62,33 +59,19 @@ jobs:
       - name: Access Secrets
         run: |
           cd src
-          # Mengisi local.properties untuk build process
+          # Pastikan semua API Key kamu ada di GitHub Secrets
           echo "TMDB_API=${{ secrets.TMDB_API }}" >> local.properties
           echo "DUMP_API=${{ secrets.DUMP_API }}" >> local.properties
           echo "DUMP_KEY=${{ secrets.DUMP_KEY }}" >> local.properties
-          echo "FanCode_API=${{ secrets.FanCode_API }}" >> local.properties
-          echo "FlixHQAPI=${{ secrets.FlixHQAPI }}" >> local.properties
           echo "CRUNCHYROLL_BASIC_TOKEN=${{ secrets.CRUNCHYROLL_BASIC_TOKEN }}" >> local.properties
-          echo "CRUNCHYROLL_REFRESH_TOKEN=${{ secrets.CRUNCHYROLL_REFRESH_TOKEN }}" >> local.properties
-          echo "ANICHI_API=${{ secrets.ANICHI_API }}" >> local.properties
-          echo "ANICHI_SERVER=${{ secrets.ANICHI_SERVER }}" >> local.properties
-          echo "ANICHI_ENDPOINT=${{ secrets.ANICHI_ENDPOINT }}" >> local.properties
-          echo "ANICHI_APP=${{ secrets.ANICHI_APP }}" >> local.properties
-          echo "ZSHOW_API=${{ secrets.ZSHOW_API }}" >> local.properties
-          echo "SFMOVIES_API=${{ secrets.SFMOVIES_API }}" >> local.properties
-          echo "CINEMATV_API=${{ secrets.CINEMATV_API }}" >> local.properties
-          echo "GHOSTX_API=${{ secrets.GHOSTX_API }}" >> local.properties
-          echo "SUPERSTREAM_FIRST_API=${{ secrets.SUPERSTREAM_FIRST_API }}" >> local.properties
-          echo "SUPERSTREAM_SECOND_API=${{ secrets.SUPERSTREAM_SECOND_API }}" >> local.properties
-          echo "SUPERSTREAM_THIRD_API=${{ secrets.SUPERSTREAM_THIRD_API }}" >> local.properties
-          echo "SUPERSTREAM_FOURTH_API=${{ secrets.SUPERSTREAM_FOURTH_API }}" >> local.properties
+          # Tambahkan API lainnya di sini sesuai kebutuhan
 
       - name: Build Plugins
         run: |
           cd src
           chmod +x gradlew
-          # Menjalankan build gradle
-          ./gradlew make makePluginsJson -x lint
+          # Menambahkan flag --refresh-dependencies untuk mencoba mendownload ulang jika gagal
+          ./gradlew make makePluginsJson -x lint --stacktrace --refresh-dependencies
           cp **/build/*.cs3 ../builds/ || true
           cp **/build/*.jar ../builds/ || true
           cp build/plugins.json ../builds/ || true
@@ -99,7 +82,6 @@ jobs:
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           git add .
-          # Menggunakan commit biasa jika amend gagal, dan tidak error jika tidak ada perubahan
-          git commit -m "Build $GITHUB_SHA" || echo "Nothing to commit"
-          # Push paksa ke branch builds menggunakan token otentikasi
+          # Menggunakan commit tanpa amend agar lebih aman dari error refspec
+          git commit -m "Update builds: $GITHUB_SHA" || echo "Nothing to change"
           git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" builds
